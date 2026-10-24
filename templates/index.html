@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phishing Detection Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f7fb;
+        margin: 0;
+        padding: 30px;
+      }
+      .container {
+        max-width: 920px;
+        margin: auto;
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      }
+      h1 { color: #1f3a5f; }
+      form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      label {
+        font-weight: 600;
+        color: #203a56;
+      }
+      input {
+        padding: 10px 12px;
+        border: 1px solid #c9d5e5;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+      button {
+        margin-top: 20px;
+        background: #1f3a5f;
+        color: white;
+        border: none;
+        padding: 12px 18px;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .result {
+        margin-top: 25px;
+        padding: 18px;
+        border-radius: 10px;
+        background: #eef6ff;
+        display: none;
+      }
+      .result.visible { display: block; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Phishing Detection Model</h1>
+      <p>Enter the feature values below and receive a prediction with model explanation.</p>
+
+      <form id="predictionForm">
+        {% for feature in features %}
+        <div class="field">
+          <label for="{{ feature }}">{{ feature }}</label>
+          <input type="number" step="any" name="{{ feature }}" id="{{ feature }}" required />
+        </div>
+        {% endfor %}
+        <div style="grid-column: 1 / -1;">
+          <button type="submit">Predict</button>
+        </div>
+      </form>
+
+      <div id="resultBox" class="result">
+        <h3>Prediction Result</h3>
+        <pre id="resultText"></pre>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('predictionForm');
+      const resultBox = document.getElementById('resultBox');
+      const resultText = document.getElementById('resultText');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        const predictResponse = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const predictData = await predictResponse.json();
+
+        const explainResponse = await fetch('/explain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const explainData = await explainResponse.json();
+        resultText.textContent = JSON.stringify({
+          prediction: predictData,
+          explanation: explainData
+        }, null, 2);
+        resultBox.classList.add('visible');
+      });
+    </script>
+  </body>
+</html>
